@@ -64,19 +64,19 @@ public class ConsoleLogger {
     public void sysOutDebug(String debug) {
         
         if (logLevel > DEBUG) {return;}
-        sysOut("[DEBUG] ", debug, "");
+        sysOut("[DEBUG]  ", debug, "");
     }
     
     public void sysOutError(String error) {
         
         if (logLevel > ERROR) {return;}
-        sysOut("[ERROR] ", error, "");
+        sysOut("[ERROR]  ", error, "");
     }
     
     public void sysOutInfo(String info) {
         
         if (logLevel > INFO) {return;}
-        sysOut("[INFO] ", info, "");
+        sysOut("[INFO]    ", info, "");
     }
     
     public void sysOutSuccess(String success) {
@@ -88,7 +88,7 @@ public class ConsoleLogger {
     public void sysOutTrace(String trace) {
         
         if (logLevel > TRACE) {return;}
-        sysOut("[TRACE] ", trace, "");
+        sysOut("[TRA  CE] ", trace, "");
     }
     
     public void sysOutWarning(String warning) {
@@ -166,8 +166,8 @@ public class ConsoleLogger {
         }
     }
     
-    private void sysOut(String print) {
+    public void sysOut(String print) {
         
-        sysOut("", print, "");
+        sysOut("[] ", print, "");
     }
 }

@@ -1,6 +1,6 @@
 package fr.ksuto.logger.tests;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 public class InjectedClassProvider implements Provider<InjectedClass> {
     

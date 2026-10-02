@@ -1,14 +1,19 @@
 package fr.ksuto.logger.aspect;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import fr.ksuto.logger.LoggerInjectors;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -18,20 +23,28 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class LoggerAspectTest {
 
-    private final Injector injector = LoggerInjectors.getLoggerInjector();
+    private static final String SERVICE = "LoggerAspectTest$Service";
 
-    private static String captureOutput(Runnable action) {
+    private final Injector                   injector = LoggerInjectors.getLoggerInjector();
+    private final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+    private final Logger                     root     = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
 
-        PrintStream           original = System.out;
-        ByteArrayOutputStream output   = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(output, true, StandardCharsets.UTF_8));
-        try {
-            action.run();
-        }
-        finally {
-            System.setOut(original);
-        }
-        return output.toString(StandardCharsets.UTF_8);
+    @BeforeEach
+    void captureLogs() {
+
+        appender.start();
+        root.addAppender(appender);
+    }
+
+    @AfterEach
+    void releaseLogs() {
+
+        root.detachAppender(appender);
+    }
+
+    private List<String> messages() {
+
+        return appender.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
     }
 
     @Test
@@ -39,53 +52,56 @@ class LoggerAspectTest {
 
         Service service = injector.getInstance(Service.class);
 
-        String output = captureOutput(() -> {
-            service.publicMethod();
-            service.protectedMethod();
-            service.packagePrivateMethod();
-        });
+        service.publicMethod();
+        service.protectedMethod();
+        service.packagePrivateMethod();
 
-        assertTrue(output.contains("[INFO] LoggerAspectTest$Service.publicMethod()"), output);
-        assertTrue(output.contains("[INFO] LoggerAspectTest$Service.protectedMethod()"), output);
-        assertTrue(output.contains("[INFO] LoggerAspectTest$Service.packagePrivateMethod()"), output);
+        assertEquals(List.of("1  " + SERVICE + ".publicMethod()",
+                             "1  " + SERVICE + ".protectedMethod()",
+                             "1  " + SERVICE + ".packagePrivateMethod()"), messages());
+    }
+
+    @Test
+    void logsAtConfiguredLevelInTheInterceptedClassLogger() {
+
+        injector.getInstance(Service.class).publicMethod();
+
+        ILoggingEvent event = appender.list.getFirst();
+        assertEquals(Level.INFO, event.getLevel());
+        assertEquals(Service.class.getName(), event.getLoggerName());
     }
 
     @Test
     void logsArgumentsAndIndentsNestedCalls() {
 
-        Service service = injector.getInstance(Service.class);
+        injector.getInstance(Service.class).callsProtected("abc", 42);
 
-        String output = captureOutput(() -> service.callsProtected("abc", 42));
-
-        assertTrue(output.contains("1  [INFO] LoggerAspectTest$Service.callsProtected(abc, 42)"), output);
-        assertTrue(output.contains("2    [INFO] LoggerAspectTest$Service.protectedMethod()"), output);
+        assertEquals(List.of("1  " + SERVICE + ".callsProtected(abc, 42)",
+                             "2    " + SERVICE + ".protectedMethod()"), messages());
     }
 
     @Test
     void doesNotLogPrivateMethods() {
 
-        Service service = injector.getInstance(Service.class);
+        injector.getInstance(Service.class).callsPrivate();
 
-        String output = captureOutput(service::callsPrivate);
-
-        assertTrue(output.contains("LoggerAspectTest$Service.callsPrivate()"), output);
-        assertFalse(output.contains("LoggerAspectTest$Service.privateMethod()"), output);
+        assertEquals(List.of("1  " + SERVICE + ".callsPrivate()"), messages());
     }
 
     @Test
     void doesNotLogInstancesCreatedWithNew() {
 
-        String output = captureOutput(() -> new Service().publicMethod());
+        new Service().publicMethod();
 
-        assertEquals("", output);
+        assertTrue(messages().isEmpty());
     }
 
     @Test
     void doesNotLogExcludedClasses() {
 
-        String output = captureOutput(() -> injector.getInstance(NotLogged.class).publicMethod());
+        injector.getInstance(NotLogged.class).publicMethod();
 
-        assertEquals("", output);
+        assertTrue(messages().isEmpty());
     }
 
     @Test

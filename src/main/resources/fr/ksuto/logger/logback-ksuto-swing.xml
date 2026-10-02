@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Fenêtre de log Swing : l'inclure suffit à l'afficher, elle s'ouvre au premier log reçu.
+    <include resource="fr/ksuto/logger/logback-ksuto-swing.xml"/>
+-->
+<included>
+    <appender name="SWING" class="fr.ksuto.logger.swing.SwingAppender">
+        <title>Logs</title>
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-5level %logger{0} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root>
+        <appender-ref ref="SWING"/>
+    </root>
+</included>

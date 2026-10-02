@@ -22,7 +22,7 @@ public class LoggerModule extends AbstractModule {
         
         if (!properties.getProperty("ksuto.logger.aspect.enable", "false").equals("true")) {return;}
         packageFilters = properties.getProperty("ksuto.logger.aspect.packages", "fr.ksuto:INFO");
-        classExclude = properties.getProperty("ksuto.logger.aspect.exclude.classes", "fr.ksuto.logger.ConsoleLogger|fr.ksuto.logger.Logger").split("\\|");
+        classExclude = properties.getProperty("ksuto.logger.aspect.exclude.classes", "").split("\\|");
         
         for (String packageFilterAndLevel : packageFilters.split(";")) {
             

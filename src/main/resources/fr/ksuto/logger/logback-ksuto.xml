@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Console commune aux projets ksuto. Dans le logback.xml de l'application :
+
+    <configuration>
+        <include resource="fr/ksuto/logger/logback-ksuto.xml"/>
+        <include resource="fr/ksuto/logger/logback-ksuto-swing.xml"/>   (fenêtre de log, optionnelle)
+        <root level="WARN">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </configuration>
+-->
+<included>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!-- %method et %line lisent la pile d'appel : pratique, mais coûteux sur des logs très fréquents -->
+            <pattern>%d{HH:mm:ss} %-5level %logger{0}.%method\(\):%line - %msg%n</pattern>
+        </encoder>
+    </appender>
+</included>

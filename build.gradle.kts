@@ -3,9 +3,11 @@ plugins {
 }
 
 group = "fr.ksuto"
-version = "2.0"
+version = "3.0"
 
 dependencies {
+    api(libs.slf4j.api)
+    api(libs.logback.classic)
     api(libs.guice)
     api(libs.ksuto.commons)
 

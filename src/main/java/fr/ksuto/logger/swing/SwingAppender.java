@@ -19,21 +19,28 @@ import javax.swing.text.StyleConstants;
  * Appender Logback qui affiche les logs dans une fenêtre Swing, en couleur selon le niveau.
  * <p>
  * La fenêtre n'est créée qu'au premier log reçu : déclarer l'appender sans le référencer n'ouvre rien.
- * Sans écran (WSL, serveur, tests), l'appender ne fait rien.
+ * Sans écran (WSL, serveur, tests), l'appender ne fait rien. Les couleurs s'adaptent au thème Swing (clair ou sombre).
  */
 public class SwingAppender extends AppenderBase<ILoggingEvent> {
 
-    private static final Color TRACE_COLOR = new Color(180, 170, 160);
-    private static final Color DEBUG_COLOR = new Color(120, 120, 120);
-    private static final Color INFO_COLOR  = new Color(50, 50, 50);
-    private static final Color WARN_COLOR  = new Color(238, 118, 33);
-    private static final Color ERROR_COLOR = new Color(139, 26, 26);
+    // Couleurs TRACE, DEBUG, WARN et ERROR pour un fond clair puis pour un fond sombre (l'INFO prend la couleur de texte du thème)
+    private static final Color[] LIGHT_PALETTE = {new Color(160, 155, 150), new Color(110, 110, 110), new Color(205, 105, 20), new Color(175, 30, 30)};
+    private static final Color[] DARK_PALETTE  = {new Color(115, 115, 115), new Color(160, 160, 160), new Color(235, 150, 60), new Color(240, 95, 95)};
 
     private Encoder<ILoggingEvent> encoder;
     private String                 title = "Logs";
     private boolean                headless;
     private JFrame                 frame;
     private JTextPane              textPane;
+
+    /**
+     * @return vrai si la couleur est sombre (luminance relative inférieure à 0,5)
+     */
+    static boolean isDark(Color color) {
+
+        double luminance = (0.2126 * color.getRed() + 0.7152 * color.getGreen() + 0.0722 * color.getBlue()) / 255;
+        return luminance < 0.5;
+    }
 
     @Override
     public void start() {
@@ -55,22 +62,24 @@ public class SwingAppender extends AppenderBase<ILoggingEvent> {
         if (headless) {return;}
 
         String text  = new String(encoder.encode(event), StandardCharsets.UTF_8);
-        Color  color = colorOf(event.getLevel());
+        Level  level = event.getLevel();
 
         SwingUtilities.invokeLater(() -> {
             if (frame == null) {createFrame();}
-            write(text, color);
+            write(text, colorOf(level));
         });
     }
 
-    private static Color colorOf(Level level) {
+    private Color colorOf(Level level) {
+
+        Color[] palette = isDark(textPane.getBackground()) ? DARK_PALETTE : LIGHT_PALETTE;
 
         return switch (level.toInt()) {
-            case Level.ERROR_INT -> ERROR_COLOR;
-            case Level.WARN_INT -> WARN_COLOR;
-            case Level.INFO_INT -> INFO_COLOR;
-            case Level.DEBUG_INT -> DEBUG_COLOR;
-            default -> TRACE_COLOR;
+            case Level.ERROR_INT -> palette[3];
+            case Level.WARN_INT -> palette[2];
+            case Level.INFO_INT -> textPane.getForeground();
+            case Level.DEBUG_INT -> palette[1];
+            default -> palette[0];
         };
     }
 
@@ -84,6 +93,7 @@ public class SwingAppender extends AppenderBase<ILoggingEvent> {
 
         textPane = new JTextPane();
         textPane.setEditable(false);
+        textPane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         ((DefaultCaret) textPane.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
         JPanel noWrapPanel = new JPanel(new BorderLayout());

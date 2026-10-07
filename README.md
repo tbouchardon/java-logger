@@ -59,4 +59,4 @@ un `logger.properties` de l'application :
 | Projet | Ce qu'il utilise |
 |---|---|
 | ClockWork (bot World of Warcraft) | Console (fenêtre de log prévue, commentée dans son `logback.xml`) |
-| Bot_Rumble (non maintenu) | `LoggerInjectors` et l'ancien `ConsoleLogger`, supprimé depuis : à remplacer par SLF4J |
+| Bot_Rumble (abandonné) | `LoggerInjectors` et l'ancien `ConsoleLogger`, supprimé depuis |
